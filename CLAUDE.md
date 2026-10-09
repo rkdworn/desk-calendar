@@ -24,7 +24,9 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
 - Node 24(LTS), 패키지 매니저는 npm. 버전은 `.nvmrc`로 고정한다.
 - `.npmrc`에 `engine-strict=true`가 있어서 `package.json`의 `engines.node`(`>=24 <25`)와 맞지 않는 Node에서는 `npm install`이 실패한다.
 - 스택 버전: Vite 8, React 19, TypeScript 6. `verbatimModuleSyntax`가 켜져 있으므로 타입만 가져올 때는 `import type`을 쓰고, 상대 경로 import에는 `.ts`/`.tsx` 확장자를 붙인다.
-- Rust 툴체인은 아직 설치되어 있지 않다(Tauri 단계에서 필요).
+- Rust는 rustup으로 사용자 폴더에 설치되어 있고, 버전은 `rust-toolchain.toml`로 1.99.0에 고정한다(rustfmt, clippy 포함).
+- MSVC 링커와 Windows SDK는 별도 Build Tools 없이 이미 설치된 Visual Studio 2026 Community **Insiders**(`C:\Program Files\Microsoft Visual Studio\18\Insiders`)의 것을 쓴다. 미리보기판이라 `vswhere`로 찾을 때는 `-prerelease`를 붙여야 보인다. VS가 자체 업데이트하는 동안에는 인스턴스 정보가 잠겨 Rust가 링커를 못 찾는다(`link.exe not found`). 업데이트가 끝나면 해결된다.
+- **Rust 빌드(cargo, tauri)는 PowerShell에서 실행한다.** Git Bash에는 `/usr/bin/link.exe`(coreutils)가 있어 rustc가 이를 MSVC 링커로 착각하고 `link: extra operand` 에러로 실패한다.
 
 ## FullCalendar v7
 
