@@ -12,6 +12,12 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
 
 아직 코드가 없다(문서만 있음). 다음 작업은 1단계 웹앱 MVP 스캐폴딩이다. 빌드·실행·테스트 명령은 스캐폴딩 후 이 파일에 추가한다.
 
+## 개발 환경
+
+- Node 24(LTS), 패키지 매니저는 npm. 버전은 `.nvmrc`로 고정한다.
+- `.npmrc`에 `engine-strict=true`가 있으므로 `package.json`의 `engines.node`와 맞지 않는 Node에서는 `npm install`이 실패한다. 스캐폴딩할 때 `engines`에 `"node": ">=24 <25"`를 넣는다.
+- Rust 툴체인은 아직 설치되어 있지 않다(3단계 Tauri에서 필요).
+
 ## 개발 단계
 
 1. **웹앱 MVP**: React + TypeScript + Vite + FullCalendar 월간 뷰. 날짜 클릭 → 일정 추가, 일정 클릭 → 수정/삭제. 저장은 localStorage. Lively Wallpaper에 로컬 웹페이지로 등록해 배경화면에서 클릭 동작을 확인한다.
