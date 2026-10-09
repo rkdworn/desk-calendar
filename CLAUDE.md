@@ -10,13 +10,39 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
 
 ## 현재 상태
 
-아직 코드가 없다(문서만 있음). 다음 작업은 1단계 웹앱 MVP 스캐폴딩이다. 빌드·실행·테스트 명령은 스캐폴딩 후 이 파일에 추가한다.
+1단계 진행 중. 월간 뷰가 localStorage 저장소에서 일정을 읽어 표시하는 데까지 되어 있고, 날짜 클릭 추가 / 일정 클릭 수정·삭제 UI는 아직 없다. 테스트 프레임워크는 아직 없다.
+
+## 명령어
+
+- `npm run dev`: Vite 개발 서버
+- `npm run build`: `tsc -b`로 타입 검사 후 프로덕션 빌드(`dist/`)
+- `npm run lint`: oxlint(설정은 `.oxlintrc.json`)
+- `npm run preview`: 빌드 결과 미리보기
 
 ## 개발 환경
 
 - Node 24(LTS), 패키지 매니저는 npm. 버전은 `.nvmrc`로 고정한다.
-- `.npmrc`에 `engine-strict=true`가 있으므로 `package.json`의 `engines.node`와 맞지 않는 Node에서는 `npm install`이 실패한다. 스캐폴딩할 때 `engines`에 `"node": ">=24 <25"`를 넣는다.
+- `.npmrc`에 `engine-strict=true`가 있어서 `package.json`의 `engines.node`(`>=24 <25`)와 맞지 않는 Node에서는 `npm install`이 실패한다.
+- 스택 버전: Vite 8, React 19, TypeScript 6. `verbatimModuleSyntax`가 켜져 있으므로 타입만 가져올 때는 `import type`을 쓰고, 상대 경로 import에는 `.ts`/`.tsx` 확장자를 붙인다.
 - Rust 툴체인은 아직 설치되어 있지 않다(3단계 Tauri에서 필요).
+
+## FullCalendar v7
+
+v6와 패키지 구성이 다르다. 웹에서 찾은 v6 예제를 그대로 쓰지 않는다.
+
+- `@fullcalendar/react` 하나만 설치한다(peer로 `temporal-polyfill` 필요). 플러그인, 로캘, 테마는 모두 하위 경로다: `@fullcalendar/react/daygrid`, `/interaction`, `/locales/ko`, `/themes/classic`. 별도 패키지인 `@fullcalendar/core`, `@fullcalendar/daygrid` 등의 최신 버전은 아직 6.x라서 섞어 설치하면 core가 두 벌 깔린다.
+- CSS가 자동 주입되지 않는다. `skeleton.css`와 테마의 `theme.css`, `palette.css`를 직접 import한다.
+- 테마도 플러그인이다(`plugins`에 `classicThemePlugin` 포함).
+- 헤더 툴바가 기본으로 나오지 않으므로 `headerToolbar`를 지정한다.
+- 타입은 `node_modules/@fullcalendar/react/index.d.ts`에서 확인한다.
+
+## 코드 구조
+
+- `src/events/`: 일정 도메인. `CalendarEvent` 타입, `EventStore` 인터페이스, `LocalStorageEventStore` 구현.
+- `src/components/MonthCalendar.tsx`: FullCalendar 래퍼. `EventStore`를 prop으로 받고, FullCalendar의 함수형 이벤트 소스(`events={fn}`)로 화면에 보이는 기간만 `store.list(range)`로 요청한다.
+- `src/App.tsx`: 사용할 `EventStore` 구현을 고르는 곳. 2단계에서 여기만 바꾼다.
+
+`CalendarEvent`의 날짜는 문자열이다. 종일 일정은 `'YYYY-MM-DD'`, 시간 일정은 ISO 8601이고, `end`는 배타적이다(FullCalendar, Google Calendar와 같은 규칙). `'YYYY-MM-DD'`를 `new Date()`에 그대로 넣으면 UTC 자정으로 해석되므로 로컬 날짜로 변환해서 비교한다(`LocalStorageEventStore`의 `toDate` 참고).
 
 ## 개발 단계
 

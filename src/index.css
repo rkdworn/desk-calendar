@@ -1,0 +1,15 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, 'Segoe UI', 'Malgun Gothic', sans-serif;
+}
+
+#root {
+  box-sizing: border-box;
+  padding: 16px;
+}
