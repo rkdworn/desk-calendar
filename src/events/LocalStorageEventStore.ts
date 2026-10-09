@@ -1,3 +1,4 @@
+import { parseEventDate } from './dates.ts'
 import type { EventStore } from './EventStore.ts'
 import type { CalendarEvent, DateRange, NewCalendarEvent } from './types.ts'
 
@@ -6,7 +7,8 @@ const STORAGE_KEY = 'desk-calendar:events'
 export class LocalStorageEventStore implements EventStore {
   async list(range: DateRange): Promise<CalendarEvent[]> {
     return this.read().filter(
-      (event) => toDate(event.start) < range.end && toDate(event.end) > range.start,
+      (event) =>
+        parseEventDate(event.start) < range.end && parseEventDate(event.end) > range.start,
     )
   }
 
@@ -37,9 +39,4 @@ export class LocalStorageEventStore implements EventStore {
   private write(events: CalendarEvent[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events))
   }
-}
-
-// 'YYYY-MM-DD'만 있는 문자열은 Date가 UTC 자정으로 해석하므로 로컬 자정으로 맞춘다.
-function toDate(value: string): Date {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : new Date(value)
 }

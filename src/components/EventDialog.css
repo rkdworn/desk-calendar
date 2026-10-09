@@ -1,0 +1,90 @@
+.event-dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.event-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.event-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-dialog h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.event-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.event-dialog .event-dialog-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-dialog input[type='text'],
+.event-dialog input[type='date'],
+.event-dialog input[type='datetime-local'] {
+  padding: 6px 8px;
+  font: inherit;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.event-dialog-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.event-dialog-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.event-dialog-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.event-dialog-actions .spacer {
+  flex: 1;
+}
+
+.event-dialog button {
+  padding: 6px 14px;
+  font: inherit;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.event-dialog button.primary {
+  border-color: #3788d8;
+  background: #3788d8;
+  color: #fff;
+}
+
+.event-dialog button.danger {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.event-dialog button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

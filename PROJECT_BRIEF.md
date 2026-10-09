@@ -28,9 +28,11 @@ Windows 노트북 바탕화면(배경화면 레이어)에 월간 캘린더를 �
 ## 개발 단계
 1. **웹앱 MVP**: React + FullCalendar 월간 뷰. 날짜 클릭 → 일정 추가, 일정 클릭 → 수정/삭제. 저장은 localStorage.
    - 테스트: Lively Wallpaper(무료, MS Store)에 로컬 웹페이지를 배경화면으로 등록해서 클릭 동작 확인.
-2. **Google Calendar 연동**: 저장소를 localStorage → Google Calendar API로 교체.
-3. **Tauri 데스크톱 앱**: 창을 바탕화면 아이콘 뒤 레이어(WorkerW)에 고정, 트레이 아이콘, 시작 시 자동 실행.
+2. **Tauri 데스크톱 앱**: 창을 바탕화면 아이콘 뒤 레이어(WorkerW)에 고정, 트레이 아이콘, 시작 시 자동 실행.
+3. **Google Calendar 연동**: 저장소를 localStorage → Google Calendar API로 교체.
 4. **배포**: GitHub Releases에 설치 파일 업로드.
+
+> 원래는 구글 연동이 Tauri보다 먼저였으나 순서를 바꿨다. 아래 OAuth 흐름(localhost 루프백 수신)은 앱이 로컬 포트를 열어야 해서 순수 웹페이지에서는 불가능하다. 웹용 OAuth로 먼저 붙이면 Tauri 단계에서 로그인을 다시 만들어야 한다.
 
 ## Google OAuth 메모
 - 흐름: 앱에서 "구글 계정 연결" → 시스템 브라우저로 구글 로그인/동의 → localhost 루프백 리디렉트로 인증 코드 수신(PKCE) → 토큰 교환 → refresh token을 자격 증명 관리자에 저장.

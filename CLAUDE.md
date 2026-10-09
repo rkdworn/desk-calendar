@@ -10,7 +10,7 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
 
 ## 현재 상태
 
-1단계 진행 중. 월간 뷰가 localStorage 저장소에서 일정을 읽어 표시하는 데까지 되어 있고, 날짜 클릭 추가 / 일정 클릭 수정·삭제 UI는 아직 없다. 테스트 프레임워크는 아직 없다.
+1단계(웹앱 MVP) 기능 완료: 월간 뷰, 날짜 클릭으로 추가, 일정 클릭으로 수정·삭제, localStorage 저장. Lively Wallpaper에서의 동작 확인은 아직 안 했다. 다음은 Tauri 단계. 테스트 프레임워크는 아직 없다.
 
 ## 명령어
 
@@ -24,7 +24,7 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
 - Node 24(LTS), 패키지 매니저는 npm. 버전은 `.nvmrc`로 고정한다.
 - `.npmrc`에 `engine-strict=true`가 있어서 `package.json`의 `engines.node`(`>=24 <25`)와 맞지 않는 Node에서는 `npm install`이 실패한다.
 - 스택 버전: Vite 8, React 19, TypeScript 6. `verbatimModuleSyntax`가 켜져 있으므로 타입만 가져올 때는 `import type`을 쓰고, 상대 경로 import에는 `.ts`/`.tsx` 확장자를 붙인다.
-- Rust 툴체인은 아직 설치되어 있지 않다(3단계 Tauri에서 필요).
+- Rust 툴체인은 아직 설치되어 있지 않다(Tauri 단계에서 필요).
 
 ## FullCalendar v7
 
@@ -38,23 +38,33 @@ v6와 패키지 구성이 다르다. 웹에서 찾은 v6 예제를 그대로 쓰
 
 ## 코드 구조
 
-- `src/events/`: 일정 도메인. `CalendarEvent` 타입, `EventStore` 인터페이스, `LocalStorageEventStore` 구현.
-- `src/components/MonthCalendar.tsx`: FullCalendar 래퍼. `EventStore`를 prop으로 받고, FullCalendar의 함수형 이벤트 소스(`events={fn}`)로 화면에 보이는 기간만 `store.list(range)`로 요청한다.
-- `src/App.tsx`: 사용할 `EventStore` 구현을 고르는 곳. 2단계에서 여기만 바꾼다.
+- `src/events/`: 일정 도메인(React 의존 없음).
+  - `types.ts`의 `CalendarEvent`, `EventStore.ts`의 저장소 인터페이스, `LocalStorageEventStore.ts` 구현
+  - `dates.ts`: 날짜 문자열 파싱·포맷
+  - `eventForm.ts`: 저장 형식(`CalendarEvent`) ↔ 편집 폼 값(`EventFormValues`) 변환과 검증
+- `src/components/MonthCalendar.tsx`: FullCalendar 래퍼이자 편집 흐름의 주인. 함수형 이벤트 소스(`events={fn}`)로 화면에 보이는 기간만 `store.list(range)`로 요청하고, 날짜/일정 클릭 시 `EventDialog`를 열고, 저장·삭제 후 `refetchEvents()`로 다시 불러온다.
+- `src/components/EventDialog.tsx`: 네이티브 `<dialog>` 기반 편집 폼. 저장소를 직접 모르고 콜백(`onSave`/`onDelete`/`onClose`)으로만 통신한다. 콜백이 throw하면 에러 메시지를 다이얼로그에 표시한다.
+- `src/App.tsx`: 사용할 `EventStore` 구현을 고르는 곳. 구글 연동 단계에서 여기만 바꾼다.
 
-`CalendarEvent`의 날짜는 문자열이다. 종일 일정은 `'YYYY-MM-DD'`, 시간 일정은 ISO 8601이고, `end`는 배타적이다(FullCalendar, Google Calendar와 같은 규칙). `'YYYY-MM-DD'`를 `new Date()`에 그대로 넣으면 UTC 자정으로 해석되므로 로컬 날짜로 변환해서 비교한다(`LocalStorageEventStore`의 `toDate` 참고).
+### 날짜 규칙
+
+- `CalendarEvent`의 날짜는 문자열이다. 종일 일정은 `'YYYY-MM-DD'`, 시간 일정은 로컬 오프셋이 붙은 ISO 8601(`'2026-10-15T14:00:00+09:00'`)이다. Google Calendar API의 `date`/`dateTime` 필드에 그대로 들어가는 형식이다.
+- `end`는 배타적이다(FullCalendar, Google Calendar와 같은 규칙). 하지만 편집 폼에서는 종일 일정의 종료일을 사용자가 보는 마지막 날(포함)로 보여 준다. 이 ±1일 변환은 `eventForm.ts`에서만 한다.
+- `'YYYY-MM-DD'`를 `new Date()`에 그대로 넣으면 UTC 자정으로 해석된다. 날짜 문자열은 `dates.ts`의 `parseEventDate`로 파싱한다.
 
 ## 개발 단계
 
 1. **웹앱 MVP**: React + TypeScript + Vite + FullCalendar 월간 뷰. 날짜 클릭 → 일정 추가, 일정 클릭 → 수정/삭제. 저장은 localStorage. Lively Wallpaper에 로컬 웹페이지로 등록해 배경화면에서 클릭 동작을 확인한다.
-2. **Google Calendar 연동**: 저장소를 localStorage에서 Google Calendar API로 교체.
-3. **Tauri 데스크톱 앱**: 창을 WorkerW(바탕화면 아이콘 뒤 레이어)에 고정, 트레이 아이콘, 시작 시 자동 실행.
+2. **Tauri 데스크톱 앱**: 창을 WorkerW(바탕화면 아이콘 뒤 레이어)에 고정, 트레이 아이콘, 시작 시 자동 실행.
+3. **Google Calendar 연동**: 저장소를 localStorage에서 Google Calendar API로 교체.
 4. **배포**: GitHub Releases에 설치 파일(.exe) 업로드.
+
+Tauri가 구글 연동보다 먼저다. OAuth 루프백 흐름은 로컬 포트를 열어야 해서 Tauri 앱에서만 가능하기 때문이다(웹용 OAuth를 임시로 붙이지 않는다).
 
 ## 단계 순서에서 나오는 설계 제약
 
-- **일정 저장은 처음부터 UI와 분리된 저장소 계층 뒤에 둔다.** 2단계에서 localStorage 구현을 Google Calendar 구현으로 바꿀 때 UI 컴포넌트를 고치지 않아도 되어야 한다. localStorage는 동기 API지만 Google Calendar API는 네트워크 호출이므로, 인터페이스는 처음부터 비동기(Promise)로 만든다.
-- **1단계 앱은 순수 웹앱으로 유지한다.** Lively Wallpaper 안에서도 돌아야 하므로 Tauri 전용 API에 의존하지 않는다. 3단계의 Tauri 기능(WorkerW 고정, 트레이, 자동 실행, 자격 증명 저장)은 별도 모듈로 감싼다.
+- **일정 저장은 처음부터 UI와 분리된 저장소 계층 뒤에 둔다.** 구글 연동 단계에서 localStorage 구현을 Google Calendar 구현으로 바꿀 때 UI 컴포넌트를 고치지 않아도 되어야 한다. localStorage는 동기 API지만 Google Calendar API는 네트워크 호출이므로, 인터페이스는 처음부터 비동기(Promise)로 만든다.
+- **1단계 앱은 순수 웹앱으로 유지한다.** Lively Wallpaper 안에서도 돌아야 하므로 Tauri 전용 API에 의존하지 않는다. Tauri 단계의 기능(WorkerW 고정, 트레이, 자동 실행, 자격 증명 저장)은 별도 모듈로 감싼다.
 - **서버가 없다.** 모든 로직은 클라이언트(웹뷰 + Tauri 백엔드)에서 동작하고, 일정 데이터는 사용자 구글 계정에만 저장된다.
 
 ## Google OAuth
