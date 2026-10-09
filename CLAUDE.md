@@ -10,14 +10,18 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
 
 ## 현재 상태
 
-1단계(웹앱 MVP) 기능 완료: 월간 뷰, 날짜 클릭으로 추가, 일정 클릭으로 수정·삭제, localStorage 저장. Lively Wallpaper에서의 동작 확인은 아직 안 했다. 다음은 Tauri 단계. 테스트 프레임워크는 아직 없다.
+- 1단계(웹앱 MVP) 기능 완료: 월간 뷰, 날짜 클릭으로 추가, 일정 클릭으로 수정·삭제, localStorage 저장. Lively Wallpaper에서의 동작 확인은 아직 안 했다.
+- Tauri 단계 진행 중: Tauri 2 기본 틀만 붙어 있다(웹앱을 일반 창에 띄움). WorkerW 고정, 트레이, 자동 실행은 아직 없다.
+- 테스트 프레임워크는 아직 없다.
 
 ## 명령어
 
-- `npm run dev`: Vite 개발 서버
+- `npm run dev`: Vite 개발 서버(포트 5173 고정, `strictPort`)
 - `npm run build`: `tsc -b`로 타입 검사 후 프로덕션 빌드(`dist/`)
 - `npm run lint`: oxlint(설정은 `.oxlintrc.json`)
 - `npm run preview`: 빌드 결과 미리보기
+- `npm run tauri dev`: Vite 개발 서버를 띄우고 Tauri 앱을 실행한다(PowerShell에서). 첫 Rust 빌드는 5분 정도 걸린다.
+- `npm run tauri build`: 설치 파일 빌드
 
 ## 개발 환경
 
@@ -47,6 +51,7 @@ v6와 패키지 구성이 다르다. 웹에서 찾은 v6 예제를 그대로 쓰
 - `src/components/MonthCalendar.tsx`: FullCalendar 래퍼이자 편집 흐름의 주인. 함수형 이벤트 소스(`events={fn}`)로 화면에 보이는 기간만 `store.list(range)`로 요청하고, 날짜/일정 클릭 시 `EventDialog`를 열고, 저장·삭제 후 `refetchEvents()`로 다시 불러온다.
 - `src/components/EventDialog.tsx`: 네이티브 `<dialog>` 기반 편집 폼. 저장소를 직접 모르고 콜백(`onSave`/`onDelete`/`onClose`)으로만 통신한다. 콜백이 throw하면 에러 메시지를 다이얼로그에 표시한다.
 - `src/App.tsx`: 사용할 `EventStore` 구현을 고르는 곳. 구글 연동 단계에서 여기만 바꾼다.
+- `src-tauri/`: Tauri 2 데스크톱 쪽(Rust). 크레이트 이름은 `desk-calendar`(라이브러리 `desk_calendar_lib`), 앱 식별자는 `com.rkdworn.deskcalendar`. 창 설정과 빌드 연결(`devUrl`, `frontendDist`)은 `tauri.conf.json`, 웹뷰에 허용할 권한은 `capabilities/`에 있다. Vite의 포트를 바꾸면 `devUrl`도 같이 바꿔야 한다.
 
 ### 날짜 규칙
 
