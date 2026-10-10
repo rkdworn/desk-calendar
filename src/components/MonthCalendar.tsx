@@ -2,6 +2,7 @@ import FullCalendar, {
   type CalendarRef,
   type DateClickInfo,
   type EventClickInfo,
+  type EventDisplayInfo,
   type EventSourceFuncInfo,
 } from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/react/daygrid'
@@ -12,6 +13,7 @@ import '@fullcalendar/react/skeleton.css'
 import '@fullcalendar/react/themes/classic/theme.css'
 import '@fullcalendar/react/themes/classic/palette.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toMeridiemTimeString } from '../events/dates.ts'
 import type { EventStore } from '../events/EventStore.ts'
 import { newAllDayEvent, toFormValues, type EventFormValues } from '../events/eventForm.ts'
 import type { NewCalendarEvent } from '../events/types.ts'
@@ -111,6 +113,9 @@ export function MonthCalendar({ store, collapsed = false }: MonthCalendarProps) 
         headerToolbar={{ start: 'title', end: 'prev,next' }}
         locale={koLocale}
         events={fetchEvents}
+        eventContent={renderEventContent}
+        // 기본값(auto)은 하루 안의 시간 일정을 점 + 글씨로 그린다. 종일 일정처럼 색 막대로 통일한다(사용자 요청).
+        eventDisplay="block"
         eventSourceFailure={(error: unknown) =>
           setLoadError({ message: error instanceof Error ? error.message : String(error) })
         }
@@ -136,5 +141,20 @@ export function MonthCalendar({ store, collapsed = false }: MonthCalendarProps) 
         />
       )}
     </>
+  )
+}
+
+// 일정 칸 내용. FullCalendar 기본 모양은 시간과 제목을 한 줄에 두고 넘치면 잘라 버리므로,
+// 시간(시간 일정만, 'AM 9:00')을 첫 줄에 두고 제목은 칸 폭에 맞춰 줄바꿈한다(index.css의 .event-label).
+// 시간을 보일지는 FullCalendar의 timeText로 정하고(여러 날 일정은 첫 칸에만) 표기만 바꾼다.
+function renderEventContent(info: EventDisplayInfo) {
+  const { event } = info
+  return (
+    <div className="event-label">
+      {info.timeText && event.start && (
+        <div className="event-label-time">{toMeridiemTimeString(event.start)}</div>
+      )}
+      <div className="event-label-title">{event.title}</div>
+    </div>
   )
 }

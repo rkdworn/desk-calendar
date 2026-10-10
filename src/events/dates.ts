@@ -25,6 +25,12 @@ export function toOffsetDateTimeString(d: Date): string {
   return `${toLocalDateTimeString(d)}:${pad(d.getSeconds())}${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`
 }
 
+// 일정 칸의 시간 표기. 예: 'AM 9:00', 'PM 12:30'(사용자가 고른 형식)
+export function toMeridiemTimeString(d: Date): string {
+  const hours = d.getHours()
+  return `${hours < 12 ? 'AM' : 'PM'} ${hours % 12 || 12}:${pad(d.getMinutes())}`
+}
+
 export function addDays(date: string, days: number): string {
   const d = parseEventDate(date)
   d.setDate(d.getDate() + days)
