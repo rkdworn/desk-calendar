@@ -1,4 +1,4 @@
-import { isTauri } from '@tauri-apps/api/core'
+import { invoke, isTauri } from '@tauri-apps/api/core'
 import { PhysicalSize } from '@tauri-apps/api/dpi'
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -48,4 +48,59 @@ export const autostartAvailable = !import.meta.env.DEV
 export const autostart = {
   isEnabled: (): Promise<boolean> => isEnabled(),
   set: (on: boolean): Promise<void> => (on ? enable() : disable()),
+}
+
+// 구글 계정 연결. OAuth와 토큰 저장은 Rust(src-tauri/src/google.rs)가 하고, 웹은 access token만 받는다.
+
+// Rust의 AuthError가 invoke 실패 값으로 이 모양으로 온다
+export type GoogleAuthError =
+  | { kind: 'notConfigured' }
+  | { kind: 'notSignedIn' }
+  | { kind: 'cancelled' }
+  | { kind: 'failed'; message: string }
+
+export interface GoogleStatus {
+  // 이 빌드에 OAuth 클라이언트(google-oauth.json)가 들어 있는지
+  configured: boolean
+  connected: boolean
+}
+
+function isGoogleAuthError(e: unknown): e is GoogleAuthError {
+  return typeof e === 'object' && e !== null && 'kind' in e
+}
+
+export function isSignInCancelled(e: unknown): boolean {
+  return isGoogleAuthError(e) && e.kind === 'cancelled'
+}
+
+export function describeGoogleError(e: unknown): string {
+  if (!isGoogleAuthError(e)) return e instanceof Error ? e.message : String(e)
+  switch (e.kind) {
+    case 'notConfigured':
+      return '구글 OAuth 클라이언트 없이 빌드된 앱입니다(src-tauri/google-oauth.json).'
+    case 'notSignedIn':
+      return '구글 계정 연결이 끊겼습니다. 설정에서 다시 연결해 주세요.'
+    case 'cancelled':
+      return '구글 로그인을 취소했습니다.'
+    case 'failed':
+      return e.message
+  }
+}
+
+export const google = {
+  status: (): Promise<GoogleStatus> => invoke('google_status'),
+  // 시스템 브라우저를 열고, 로그인이 끝나거나 실패·취소될 때까지 기다린다
+  signIn: (): Promise<void> => invoke('google_sign_in'),
+  cancelSignIn: (): Promise<void> => invoke('google_cancel_sign_in'),
+  signOut: (): Promise<void> => invoke('google_sign_out'),
+  // GoogleCalendarEventStore의 AccessTokenProvider
+  accessToken: (rejected?: string): Promise<string> =>
+    invoke<string>('google_access_token', { rejected }).catch((e: unknown) => {
+      throw new Error(describeGoogleError(e))
+    }),
+}
+
+// 연결·해제(다른 창에서 한 것 포함)와, 구글 쪽에서 연결이 끊긴 것을 알게 됐을 때 온다
+export function onGoogleAuthChanged(handler: (connected: boolean) => void): Promise<UnlistenFn> {
+  return listen<boolean>('google-auth-changed', (event) => handler(event.payload))
 }

@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
-import { autostart, autostartAvailable, broadcastAppearance, inTauri } from '../platform/tauri.ts'
+import {
+  autostart,
+  autostartAvailable,
+  broadcastAppearance,
+  describeGoogleError,
+  google,
+  inTauri,
+  isSignInCancelled,
+  onGoogleAuthChanged,
+  type GoogleStatus,
+} from '../platform/tauri.ts'
 import {
   DEFAULT_APPEARANCE,
   loadAppearance,
@@ -64,9 +74,7 @@ export function SettingsApp() {
 
       <section>
         <h2>계정</h2>
-        <button type="button" className="settings-secondary" disabled>
-          구글 계정 연결
-        </button>
+        <GoogleAccount />
       </section>
     </main>
   )
@@ -104,6 +112,75 @@ function AutostartSwitch() {
         />
       </label>
       {!autostartAvailable && <p className="settings-note">설치된 앱에서만 켤 수 있습니다(개발 모드).</p>}
+      {error && <p className="settings-error">{error}</p>}
+    </>
+  )
+}
+
+function GoogleAccount() {
+  const [status, setStatus] = useState<GoogleStatus | null>(null)
+  const [signingIn, setSigningIn] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!inTauri) return
+    google.status().then(setStatus, (e: unknown) => setError(describeGoogleError(e)))
+    // 구글 쪽에서 연결이 끊긴 것을 캘린더 창이 알게 된 경우에도 온다
+    const unlisten = onGoogleAuthChanged((connected) => setStatus((s) => s && { ...s, connected }))
+    return () => void unlisten.then((stop) => stop())
+  }, [])
+
+  async function signIn() {
+    setError(null)
+    setSigningIn(true)
+    try {
+      await google.signIn()
+    } catch (e) {
+      if (!isSignInCancelled(e)) setError(describeGoogleError(e))
+    } finally {
+      setSigningIn(false)
+    }
+  }
+
+  async function signOut() {
+    setError(null)
+    try {
+      await google.signOut()
+    } catch (e) {
+      setError(describeGoogleError(e))
+    }
+  }
+
+  const connected = status?.connected ?? false
+  return (
+    <>
+      <div className="settings-row settings-account">
+        <span>{connected ? '구글 캘린더와 연결됨' : '연결 안 됨 (이 PC에만 저장)'}</span>
+        {signingIn ? (
+          <button type="button" className="settings-secondary" onClick={() => void google.cancelSignIn()}>
+            취소
+          </button>
+        ) : connected ? (
+          <button type="button" className="settings-secondary" onClick={() => void signOut()}>
+            연결 해제
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="settings-secondary"
+            disabled={!status?.configured}
+            onClick={() => void signIn()}
+          >
+            구글 계정 연결
+          </button>
+        )}
+      </div>
+      {signingIn && <p className="settings-note">브라우저에서 구글 로그인을 마쳐 주세요.</p>}
+      {status && !status.configured && (
+        <p className="settings-note">
+          구글 OAuth 클라이언트 없이 빌드된 앱입니다(src-tauri/google-oauth.json).
+        </p>
+      )}
       {error && <p className="settings-error">{error}</p>}
     </>
   )

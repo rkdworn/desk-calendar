@@ -129,3 +129,12 @@ body {
 .settings-error {
   color: #b91c1c;
 }
+
+/* 계정 줄: 상태 | 버튼 (값 칸 없음) */
+.settings-account {
+  grid-template-columns: 1fr auto;
+}
+
+.settings-account .settings-secondary {
+  margin-top: 0;
+}

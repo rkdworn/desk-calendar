@@ -2,3 +2,6 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# 구글 OAuth 클라이언트(데스크톱 앱) JSON. 저장소에 올리지 않는다(build.rs가 읽어 실행 파일에 넣는다)
+/google-oauth.json

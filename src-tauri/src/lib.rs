@@ -1,3 +1,4 @@
+mod google;
 mod layout;
 
 #[cfg(windows)]
@@ -15,6 +16,16 @@ pub fn run() {
     .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| open_calendar(app)))
     // Windows 시작 시 자동 실행(HKCU Run). 켜고 끄기는 설정 창에서 한다.
     .plugin(tauri_plugin_autostart::Builder::new().build())
+    // 구글 로그인 때 시스템 브라우저를 연다(Rust에서만 쓴다)
+    .plugin(tauri_plugin_opener::init())
+    .manage(google::GoogleAuth::new())
+    .invoke_handler(tauri::generate_handler![
+      google::google_status,
+      google::google_sign_in,
+      google::google_cancel_sign_in,
+      google::google_sign_out,
+      google::google_access_token,
+    ])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -23,6 +34,9 @@ pub fn run() {
             .build(),
         )?;
       }
+      // 구글 refresh token 저장소
+      #[cfg(windows)]
+      keyring_core::set_default_store(windows_native_keyring_store::Store::new()?);
       let window = app.get_webview_window(CALENDAR).ok_or("calendar window not found")?;
       setup_calendar(app.handle(), &window);
       setup_tray(app)?;

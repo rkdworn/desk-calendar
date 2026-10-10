@@ -13,6 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.7.1", features = [] }
+serde_json = "1.0"
 
 [dependencies]
 serde_json = "1.0"
@@ -20,6 +21,16 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.12.1", features = ["tray-icon"] }
 tauri-plugin-log = "2"
+tauri-plugin-opener = "2"
+# 구글 로그인(src/google.rs): 토큰 요청, 루프백 수신, PKCE
+# reqwest 기본 TLS(rustls + aws-lc-rs)는 Windows에서 CMake·NASM이 필요해 Windows 내장 TLS를 쓴다
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "json", "form", "system-proxy"] }
+tokio = { version = "1", features = ["rt", "net", "io-util", "time", "sync"] }
+url = "2"
+base64 = "0.22"
+sha2 = "0.10"
+getrandom = "0.3"
+keyring-core = "1"
 
 [target.'cfg(windows)'.dependencies]
 # tauri와 같은 버전이어야 HWND 타입이 그대로 맞는다
@@ -29,6 +40,8 @@ windows = { version = "0.62", features = [
   "Win32_UI_Shell",
   "Win32_UI_WindowsAndMessaging",
 ] }
+# refresh token 저장(Windows 자격 증명 관리자). 기본 기능 search는 쓰지 않는다(regex 의존성).
+windows-native-keyring-store = { version = "1", default-features = false }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"

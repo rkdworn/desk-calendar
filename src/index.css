@@ -60,3 +60,38 @@ html.desktop .calendar-surface {
   background: var(--surface-background, rgba(255, 255, 255, 0.72));
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
+
+/* 일정을 불러오지 못했을 때 캘린더 아래쪽에 띄우는 안내(MonthCalendar). 30초마다 저절로 다시 시도한다. */
+.calendar-load-error {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  max-width: calc(100% - 32px);
+  padding: 6px 8px 6px 12px;
+  border-radius: 6px;
+  background: rgba(153, 27, 27, 0.92);
+  color: #fff;
+  font-size: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transform: translateX(-50%);
+}
+
+.calendar-load-error button {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+html.collapsed .calendar-load-error {
+  display: none;
+}

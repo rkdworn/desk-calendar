@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Google Cloud 콘솔에서 받은 OAuth 클라이언트 비밀 파일
+client_secret*.json
