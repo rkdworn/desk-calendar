@@ -19,12 +19,14 @@ import { EventDialog } from './EventDialog.tsx'
 
 interface MonthCalendarProps {
   store: EventStore
+  // 접힌 상태에서는 날짜 칸이 CSS로 숨겨지므로 높이를 내용(상단 바)에 맞춘다
+  collapsed?: boolean
 }
 
 // id가 null이면 새 일정
 type Editing = { id: string | null; values: EventFormValues }
 
-export function MonthCalendar({ store }: MonthCalendarProps) {
+export function MonthCalendar({ store, collapsed = false }: MonthCalendarProps) {
   const calendarRef = useRef<CalendarRef>(null)
   const [editing, setEditing] = useState<Editing | null>(null)
 
@@ -76,12 +78,12 @@ export function MonthCalendar({ store }: MonthCalendarProps) {
         ref={calendarRef}
         plugins={[classicThemePlugin, dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        headerToolbar={{ start: 'title', end: 'today prev,next' }}
+        headerToolbar={{ start: 'title', end: 'prev,next' }}
         locale={koLocale}
         events={fetchEvents}
         dateClick={handleDateClick}
         eventClick={handleEventClick}
-        height="100%"
+        height={collapsed ? 'auto' : '100%'}
       />
       {editing && (
         <EventDialog

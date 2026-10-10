@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react'
 import { fromFormValues, setAllDay, type EventFormValues } from '../events/eventForm.ts'
 import type { NewCalendarEvent } from '../events/types.ts'
 import './EventDialog.css'
@@ -17,6 +17,7 @@ export function EventDialog({ initial, isNew, onSave, onDelete, onClose }: Event
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const pressedOutside = useRef(false)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -53,10 +54,34 @@ export function EventDialog({ initial, isNew, onSave, onDelete, onClose }: Event
     void run(onDelete)
   }
 
+  // 모달 <dialog>의 바깥(::backdrop) 클릭은 dialog 자신에게 오므로 좌표로 상자 밖인지 가린다
+  function isOutside(e: MouseEvent) {
+    const box = dialogRef.current?.getBoundingClientRect()
+    if (!box || e.target !== dialogRef.current) return false
+    return e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom
+  }
+
+  // 누른 곳과 뗀 곳이 모두 바깥일 때만 닫는다. 입력 칸에서 드래그로 글자를 고르다
+  // 바깥에서 놓는 경우는 닫지 않는다.
+  function handleMouseDown(e: MouseEvent) {
+    pressedOutside.current = isOutside(e)
+  }
+
+  function handleClick(e: MouseEvent) {
+    if (pressedOutside.current && isOutside(e) && !busy) onClose()
+    pressedOutside.current = false
+  }
+
   const inputType = values.allDay ? 'date' : 'datetime-local'
 
   return (
-    <dialog ref={dialogRef} className="event-dialog" onClose={onClose}>
+    <dialog
+      ref={dialogRef}
+      className="event-dialog"
+      onClose={onClose}
+      onMouseDown={handleMouseDown}
+      onClick={handleClick}
+    >
       <form onSubmit={handleSubmit}>
         <h2>{isNew ? '새 일정' : '일정 수정'}</h2>
 

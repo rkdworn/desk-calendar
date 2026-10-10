@@ -13,3 +13,43 @@ body {
   box-sizing: border-box;
   padding: 16px;
 }
+
+.calendar-surface {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  color: var(--fc-classic-foreground);
+}
+
+/* 바탕화면 모드: 창 배경은 비우고 캘린더 판만 반투명하게 깔아 배경화면이 비치게 한다 */
+html.desktop,
+html.desktop body {
+  background: transparent;
+}
+
+/* 판 바깥의 투명 여백. Tauri의 가장자리 크기 조절 구역(창 끝에서 5px)이 판의 테두리에
+   걸치도록 그보다 좁게 둔다. 이 여백도 창이라 아래 아이콘을 가린다. */
+html.desktop #root {
+  padding: 4px;
+}
+
+/* 접힌 상태: 상단 바만 남기고 날짜 칸(role=grid를 감싼 FullCalendar 본문)을 숨긴다.
+   FullCalendar v7의 유틸리티 클래스가 display: flex !important라서 !important가 필요하다. */
+html.collapsed .calendar-surface {
+  height: auto;
+}
+
+html.collapsed .calendar-surface :has(> [role='grid']) {
+  display: none !important;
+}
+
+html.desktop .calendar-surface {
+  /* FullCalendar 테마가 그리드와 요일 머리글을 이 색(기본 흰색)으로 칠하므로 비운다 */
+  --fc-classic-background: transparent;
+  /* 위쪽 여백은 이동 손잡이와 숨기기 버튼 자리 */
+  padding: 28px 12px 12px;
+  border-radius: 12px;
+  /* 색·투명도는 설정 창에서 바꾼다(src/settings/appearance.ts) */
+  background: var(--surface-background, rgba(255, 255, 255, 0.72));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}

@@ -12,4 +12,10 @@ export default defineConfig({
     strictPort: true,
     watch: { ignored: ['**/src-tauri/**'] },
   },
+  build: {
+    // 캘린더(index.html)와 트레이 메뉴로 여는 설정 창(settings.html)은 별도 페이지다
+    rolldownOptions: {
+      input: { main: 'index.html', settings: 'settings.html' },
+    },
+  },
 })

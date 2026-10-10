@@ -18,5 +18,17 @@ tauri-build = { version = "2.7.1", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.12.1", features = [] }
+tauri = { version = "2.12.1", features = ["tray-icon"] }
 tauri-plugin-log = "2"
+
+[target.'cfg(windows)'.dependencies]
+# tauri와 같은 버전이어야 HWND 타입이 그대로 맞는다
+windows = { version = "0.62", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-autostart = "2"
