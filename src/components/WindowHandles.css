@@ -60,18 +60,28 @@
   color: #1e293b;
 }
 
-/* 오른쪽 아래 모서리의 두 줄 사선 */
+/* 왼쪽 위·오른쪽 아래 모서리의 크기 조절 손잡이(두 줄 사선) */
 .window-handle-resize {
-  right: 3px;
-  bottom: 3px;
   width: 12px;
   height: 12px;
   cursor: nwse-resize;
+  --grip: linear-gradient(135deg, transparent 45%, rgba(31, 41, 55, 0.3) 45% 55%, transparent 55%);
+}
+
+.window-handle-resize-top-left {
+  left: 3px;
+  top: 3px;
   background:
-    linear-gradient(135deg, transparent 45%, rgba(31, 41, 55, 0.3) 45% 55%, transparent 55%)
-      no-repeat right bottom / 12px 12px,
-    linear-gradient(135deg, transparent 45%, rgba(31, 41, 55, 0.3) 45% 55%, transparent 55%)
-      no-repeat right bottom / 7px 7px;
+    var(--grip) no-repeat left top / 12px 12px,
+    var(--grip) no-repeat left top / 7px 7px;
+}
+
+.window-handle-resize-bottom-right {
+  right: 3px;
+  bottom: 3px;
+  background:
+    var(--grip) no-repeat right bottom / 12px 12px,
+    var(--grip) no-repeat right bottom / 7px 7px;
 }
 
 .window-handle-resize:hover {

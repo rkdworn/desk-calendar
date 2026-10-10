@@ -68,8 +68,8 @@ pub fn move_to(hwnd: HWND, rect: &ScreenRect) -> Result<(), String> {
 /// 표시줄을 내용 위에 덧그린다. tao는 창 상태가 바뀔 때(show/hide 등) 스타일을 다시
 /// 계산해 덮어쓰므로, 그런 호출 뒤에는 이 함수를 다시 불러야 한다.
 ///
-/// WS_THICKFRAME(WS_SIZEBOX)은 남긴다. Tauri의 테두리 없는 창 가장자리 크기 조절이 이 스타일이
-/// 있을 때만 동작한다. 테두리 그리기는 suppress_frame_painting이 막는다.
+/// 크기 조절 스타일(WS_THICKFRAME)은 처음부터 없다(tauri.conf.json의 resizable: false).
+/// 크기는 웹 쪽 모서리 손잡이가 set_calendar_rect로 바꾼다.
 pub fn strip_frame(hwnd: HWND) {
   let frame = (WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX).0;
   let frame_ex = (WS_EX_WINDOWEDGE | WS_EX_APPWINDOW).0;

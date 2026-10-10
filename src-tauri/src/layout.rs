@@ -99,6 +99,30 @@ impl DebouncedSaver {
   }
 }
 
+/// 크기 조절 손잡이가 있는 모서리. 창 가장자리 크기 조절은 막아 두었다(tauri.conf.json의 resizable).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Corner {
+  TopLeft,
+  BottomRight,
+}
+
+/// `corner`를 (dx, dy)만큼 끌었을 때의 창 영역. 반대쪽 모서리는 그대로 두고 최소 크기를 지킨다.
+pub fn resize_from_corner(start: ScreenRect, corner: Corner, dx: i32, dy: i32, min_width: i32, min_height: i32) -> ScreenRect {
+  match corner {
+    Corner::BottomRight => ScreenRect {
+      width: (start.width + dx).max(min_width),
+      height: (start.height + dy).max(min_height),
+      ..start
+    },
+    Corner::TopLeft => {
+      let width = (start.width - dx).max(min_width);
+      let height = (start.height - dy).max(min_height);
+      ScreenRect { x: start.x + start.width - width, y: start.y + start.height - height, width, height }
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -131,6 +155,36 @@ mod tests {
   fn default_is_top_right_of_primary_work_area_scaled() {
     let rect = resolve(None, &[PRIMARY], PRIMARY_WORK, 1.25);
     assert_eq!(rect, ScreenRect { x: 1920 - 1350 - 30, y: 30, width: 1350, height: 950 });
+  }
+
+  const START: ScreenRect = ScreenRect { x: 100, y: 200, width: 800, height: 600 };
+
+  #[test]
+  fn bottom_right_keeps_top_left_fixed() {
+    assert_eq!(
+      resize_from_corner(START, Corner::BottomRight, 50, -20, 480, 360),
+      ScreenRect { x: 100, y: 200, width: 850, height: 580 }
+    );
+  }
+
+  #[test]
+  fn top_left_keeps_bottom_right_fixed() {
+    let rect = resize_from_corner(START, Corner::TopLeft, -50, 30, 480, 360);
+    assert_eq!(rect, ScreenRect { x: 50, y: 230, width: 850, height: 570 });
+    assert_eq!((rect.x + rect.width, rect.y + rect.height), (900, 800));
+  }
+
+  #[test]
+  fn corners_stop_at_minimum_size() {
+    assert_eq!(
+      resize_from_corner(START, Corner::BottomRight, -1000, -1000, 480, 360),
+      ScreenRect { x: 100, y: 200, width: 480, height: 360 }
+    );
+    // 왼쪽 위 모서리는 최소 크기에서 멈추고 오른쪽 아래 모서리를 넘어가지 않는다
+    assert_eq!(
+      resize_from_corner(START, Corner::TopLeft, 1000, 1000, 480, 360),
+      ScreenRect { x: 420, y: 440, width: 480, height: 360 }
+    );
   }
 
   #[test]

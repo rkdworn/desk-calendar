@@ -16,7 +16,7 @@
         "title": "Desk Calendar",
         "width": 1100,
         "height": 800,
-        "resizable": true,
+        "resizable": false,
         "fullscreen": false,
         "decorations": false,
         "skipTaskbar": true,

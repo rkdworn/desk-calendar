@@ -27,8 +27,7 @@ html.desktop body {
   background: transparent;
 }
 
-/* 판 바깥의 투명 여백. Tauri의 가장자리 크기 조절 구역(창 끝에서 5px)이 판의 테두리에
-   걸치도록 그보다 좁게 둔다. 이 여백도 창이라 아래 아이콘을 가린다. */
+/* 판 바깥의 투명 여백(판 그림자 자리). 이 여백도 창이라 아래 아이콘을 가리므로 좁게 둔다. */
 html.desktop #root {
   padding: 4px;
 }

@@ -21,13 +21,32 @@ export async function resizeHeight(height: number): Promise<void> {
   await win.setSize(new PhysicalSize(width, Math.round(height * window.devicePixelRatio)))
 }
 
-// 오른쪽 아래 손잡이용. 드래그 중 계속 불러 크기를 직접 지정한다. 인자는 CSS 픽셀.
-// (창 가장자리 크기 조절은 Tauri가 OS 기능으로 따로 처리한다)
-export function resizeTo(width: number, height: number): void {
+// 모서리 손잡이 크기 조절(src-tauri/src/lib.rs). 창 가장자리 크기 조절은 막아 두었다.
+// 누를 때 beginResize로 시작 상태를 받고, 끄는 동안 그 상태를 resizeFromCorner에 넘겨 계속 부른다.
+// 마우스 위치는 Rust가 OS에서 바로 읽는다.
+export type ResizeCorner = 'topLeft' | 'bottomRight'
+
+// 손잡이를 누른 순간의 창 영역과 마우스 위치. 웹 쪽은 그대로 돌려주기만 한다.
+export type ResizeStart = { readonly __brand: 'ResizeStart' }
+
+export function beginResize(): Promise<ResizeStart> {
+  return invoke('begin_calendar_resize')
+}
+
+// 최소 크기는 CSS 픽셀
+export function resizeFromCorner(
+  corner: ResizeCorner,
+  start: ResizeStart,
+  minWidth: number,
+  minHeight: number,
+): void {
   const ratio = window.devicePixelRatio
-  void getCurrentWindow().setSize(
-    new PhysicalSize(Math.round(width * ratio), Math.round(height * ratio)),
-  )
+  void invoke('resize_calendar', {
+    corner,
+    start,
+    minWidth: Math.round(minWidth * ratio),
+    minHeight: Math.round(minHeight * ratio),
+  })
 }
 
 // 설정 창 → 캘린더 창으로 외관 변경을 바로 알린다. 저장은 localStorage(appearance.ts)가 한다.

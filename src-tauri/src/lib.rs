@@ -4,6 +4,8 @@ mod layout;
 #[cfg(windows)]
 mod desktop;
 
+use layout::{Corner, ScreenRect};
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, RunEvent, WebviewWindow};
 
 const CALENDAR: &str = "main";
@@ -25,6 +27,8 @@ pub fn run() {
       google::google_cancel_sign_in,
       google::google_sign_out,
       google::google_access_token,
+      begin_calendar_resize,
+      resize_calendar,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -191,10 +195,69 @@ fn show_calendar(window: &WebviewWindow) -> tauri::Result<()> {
   Ok(())
 }
 
+// ---- 모서리 손잡이 크기 조절 ----
+// 창 가장자리 크기 조절은 일부러 막았고(tauri.conf.json의 resizable: false) 웹 쪽 왼쪽 위·오른쪽 아래
+// 손잡이로만 크기를 바꾼다(WindowHandles.tsx). 손잡이를 누를 때 begin_calendar_resize로 시작 상태를
+// 받고, 끄는 동안 그 상태를 resize_calendar에 넘겨 계속 부른다.
+// 마우스 위치는 웹 쪽 좌표(screenX)가 아니라 OS에서 바로 읽는다. 왼쪽 위 모서리를 끌면 창이 함께
+// 움직이는데 웹뷰가 아는 창 위치는 한 박자 늦게 따라오기 때문이다.
+// Win32 창 작업이라 UI 스레드에서 돌도록 동기 명령으로 둔다.
+
+/// 손잡이를 누른 순간의 창 영역과 마우스 위치(화면 기준 물리 픽셀). 웹 쪽은 그대로 돌려주기만 한다.
+#[derive(Serialize, Deserialize)]
+struct ResizeStart {
+  rect: ScreenRect,
+  cursor_x: i32,
+  cursor_y: i32,
+}
+
+#[tauri::command]
+fn begin_calendar_resize(window: WebviewWindow) -> Result<ResizeStart, String> {
+  let position = window.outer_position().map_err(|e| e.to_string())?;
+  let size = window.outer_size().map_err(|e| e.to_string())?;
+  let cursor = window.cursor_position().map_err(|e| e.to_string())?;
+  Ok(ResizeStart {
+    rect: ScreenRect { x: position.x, y: position.y, width: size.width as i32, height: size.height as i32 },
+    cursor_x: cursor.x.round() as i32,
+    cursor_y: cursor.y.round() as i32,
+  })
+}
+
+/// 최소 크기는 웹 쪽이 화면 배율을 곱해 물리 픽셀로 넘긴다
+#[tauri::command]
+fn resize_calendar(
+  window: WebviewWindow,
+  corner: Corner,
+  start: ResizeStart,
+  min_width: i32,
+  min_height: i32,
+) -> Result<(), String> {
+  let cursor = window.cursor_position().map_err(|e| e.to_string())?;
+  let rect = layout::resize_from_corner(
+    start.rect,
+    corner,
+    cursor.x.round() as i32 - start.cursor_x,
+    cursor.y.round() as i32 - start.cursor_y,
+    min_width,
+    min_height,
+  );
+  // 위치와 크기를 한 번에 바꾼다. 따로 바꾸면 왼쪽 위 손잡이를 끌 때 반대쪽 모서리가 흔들린다.
+  #[cfg(windows)]
+  if let Ok(hwnd) = window.hwnd()
+    && desktop::is_attached(hwnd)
+  {
+    return desktop::move_to(hwnd, &rect);
+  }
+  // 바탕화면에 붙지 못해 일반 창으로 뜬 경우
+  window
+    .set_position(tauri::PhysicalPosition::new(rect.x, rect.y))
+    .and_then(|()| window.set_size(tauri::PhysicalSize::new(rect.width as u32, rect.height as u32)))
+    .map_err(|e| e.to_string())
+}
+
 /// 캘린더 창을 바탕화면에 붙이고, 사용자가 옮기거나 크기를 바꾸면 위치를 저장한다.
 #[cfg(windows)]
 fn pin_to_desktop(app: &AppHandle, window: &WebviewWindow) -> Result<(), Box<dyn std::error::Error>> {
-  use layout::ScreenRect;
   use tauri::WindowEvent;
 
   let path = app.path().app_config_dir()?.join("layout.json");
