@@ -43,6 +43,13 @@ html.collapsed .calendar-surface :has(> [role='grid']) {
   display: none !important;
 }
 
+/* 바탕화면 창은 항상 창 크기에 맞춰 그리므로 스크롤할 일이 없다. 접기/펼치기나 크기 조절 중
+   창 크기가 따라오기 전에 내용이 잠깐 넘쳐도 스크롤바가 보이지 않게 한다. */
+html.desktop,
+html.desktop body {
+  overflow: hidden;
+}
+
 html.desktop .calendar-surface {
   /* FullCalendar 테마가 그리드와 요일 머리글을 이 색(기본 흰색)으로 칠하므로 비운다 */
   --fc-classic-background: transparent;

@@ -27,15 +27,18 @@ export function useCollapse(surfaceRef: RefObject<HTMLElement | null>) {
     return () => cancelAnimationFrame(frame)
   }, [collapsed, surfaceRef])
 
-  function toggle() {
-    if (collapsed) {
-      const saved = Number(localStorage.getItem(EXPANDED_HEIGHT_KEY))
-      void resizeHeight(saved || DEFAULT_EXPANDED_HEIGHT)
-    } else {
-      localStorage.setItem(EXPANDED_HEIGHT_KEY, String(window.innerHeight))
-    }
+  async function toggle() {
     localStorage.setItem(COLLAPSED_KEY, String(!collapsed))
-    setCollapsed(!collapsed)
+    if (!collapsed) {
+      localStorage.setItem(EXPANDED_HEIGHT_KEY, String(window.innerHeight))
+      setCollapsed(true)
+      return
+    }
+    // 펼칠 때는 창을 먼저 키운 뒤 날짜 칸을 보이게 한다. 순서가 반대면 작은 창에 큰 캘린더가
+    // 먼저 들어차서 스크롤바가 잠깐 보인다.
+    const saved = Number(localStorage.getItem(EXPANDED_HEIGHT_KEY))
+    await resizeHeight(saved || DEFAULT_EXPANDED_HEIGHT)
+    setCollapsed(false)
   }
 
   return { collapsed, toggle }
