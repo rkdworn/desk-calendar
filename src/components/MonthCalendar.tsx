@@ -13,10 +13,12 @@ import '@fullcalendar/react/skeleton.css'
 import '@fullcalendar/react/themes/classic/theme.css'
 import '@fullcalendar/react/themes/classic/palette.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { findEventColor, randomEventColorId } from '../events/colors.ts'
 import { toMeridiemTimeString } from '../events/dates.ts'
 import type { EventStore } from '../events/EventStore.ts'
 import { newAllDayEvent, toFormValues, type EventFormValues } from '../events/eventForm.ts'
-import type { NewCalendarEvent } from '../events/types.ts'
+import type { CalendarEvent, NewCalendarEvent } from '../events/types.ts'
+import { readableTextOn } from '../settings/appearance.ts'
 import { EventDialog } from './EventDialog.tsx'
 
 interface MonthCalendarProps {
@@ -46,7 +48,7 @@ export function MonthCalendar({ store, collapsed = false }: MonthCalendarProps) 
     async (info: EventSourceFuncInfo) => {
       const events = await store.list({ start: info.start, end: info.end })
       setLoadError(null)
-      return events
+      return events.map(toEventInput)
     },
     [store],
   )
@@ -68,8 +70,10 @@ export function MonthCalendar({ store, collapsed = false }: MonthCalendarProps) 
     return () => clearTimeout(timer)
   }, [loadError, refetch])
 
+  // 새 일정은 무작위 색으로 시작한다(편집 창에서 바꿀 수 있다)
   function handleDateClick(info: DateClickInfo) {
-    setEditing({ id: null, values: toFormValues(newAllDayEvent(info.date)) })
+    const event = { ...newAllDayEvent(info.date), colorId: randomEventColorId() }
+    setEditing({ id: null, values: toFormValues(event) })
   }
 
   function handleEventClick({ event }: EventClickInfo) {
@@ -80,6 +84,7 @@ export function MonthCalendar({ store, collapsed = false }: MonthCalendarProps) 
         allDay: event.allDay,
         start: event.startStr,
         end: event.endStr,
+        colorId: (event.extendedProps as Pick<CalendarEvent, 'colorId'>).colorId,
       }),
     })
   }
@@ -142,6 +147,13 @@ export function MonthCalendar({ store, collapsed = false }: MonthCalendarProps) 
       )}
     </>
   )
+}
+
+// 색이 있는 일정은 막대를 그 색으로 칠한다. 색이 없으면
+// 테마 기본 일정 색(--fc-classic-event, 파랑). colorId는 FullCalendar의 extendedProps로 들어간다.
+function toEventInput(event: CalendarEvent) {
+  const color = findEventColor(event.colorId)
+  return color ? { ...event, color: color.hex, contrastColor: readableTextOn(color.hex) } : event
 }
 
 // 일정 칸 내용. FullCalendar 기본 모양은 시간과 제목을 한 줄에 두고 넘치면 잘라 버리므로,

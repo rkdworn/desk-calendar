@@ -15,6 +15,7 @@ export interface EventFormValues {
   allDay: boolean
   start: string
   end: string
+  colorId?: string
 }
 
 export type FormResult = { ok: true; event: NewCalendarEvent } | { ok: false; error: string }
@@ -24,11 +25,18 @@ const DEFAULT_END_TIME = '10:00'
 
 export function toFormValues(event: NewCalendarEvent): EventFormValues {
   if (event.allDay) {
-    return { title: event.title, allDay: true, start: event.start, end: addDays(event.end, -1) }
+    return {
+      title: event.title,
+      allDay: true,
+      start: event.start,
+      end: addDays(event.end, -1),
+      colorId: event.colorId,
+    }
   }
   return {
     title: event.title,
     allDay: false,
+    colorId: event.colorId,
     start: toLocalDateTimeString(parseEventDate(event.start)),
     end: toLocalDateTimeString(parseEventDate(event.end)),
   }
@@ -45,7 +53,13 @@ export function fromFormValues(values: EventFormValues): FormResult {
     }
     return {
       ok: true,
-      event: { title, allDay: true, start: values.start, end: addDays(values.end, 1) },
+      event: {
+        title,
+        allDay: true,
+        start: values.start,
+        end: addDays(values.end, 1),
+        colorId: values.colorId,
+      },
     }
   }
 
@@ -59,6 +73,7 @@ export function fromFormValues(values: EventFormValues): FormResult {
       allDay: false,
       start: toOffsetDateTimeString(start),
       end: toOffsetDateTimeString(end),
+      colorId: values.colorId,
     },
   }
 }

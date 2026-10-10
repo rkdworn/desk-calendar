@@ -7,6 +7,8 @@ export interface CalendarEvent {
   start: string
   end: string
   allDay: boolean
+  // Google Calendar 일정 색 번호('1'~'11', colors.ts). 없으면 기본색.
+  colorId?: string
 }
 
 export type NewCalendarEvent = Omit<CalendarEvent, 'id'>

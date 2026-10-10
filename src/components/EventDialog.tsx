@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react'
 import { fromFormValues, setAllDay, type EventFormValues } from '../events/eventForm.ts'
 import type { NewCalendarEvent } from '../events/types.ts'
+import { EventColorPicker } from './EventColorPicker.tsx'
 import './EventDialog.css'
 
 interface EventDialogProps {
@@ -95,14 +96,20 @@ export function EventDialog({ initial, isNew, onSave, onDelete, onClose }: Event
           />
         </label>
 
-        <label className="event-dialog-inline">
-          <input
-            type="checkbox"
-            checked={values.allDay}
-            onChange={(e) => setValues(setAllDay(values, e.target.checked))}
+        <div className="event-dialog-row">
+          <label className="event-dialog-inline">
+            <input
+              type="checkbox"
+              checked={values.allDay}
+              onChange={(e) => setValues(setAllDay(values, e.target.checked))}
+            />
+            종일
+          </label>
+          <EventColorPicker
+            value={values.colorId}
+            onChange={(colorId) => setValues({ ...values, colorId })}
           />
-          종일
-        </label>
+        </div>
 
         <div className="event-dialog-range">
           <label>

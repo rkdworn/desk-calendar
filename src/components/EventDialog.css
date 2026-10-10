@@ -88,3 +88,65 @@
   opacity: 0.6;
   cursor: default;
 }
+
+/* 종일 체크 | 색 선택 */
+.event-dialog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.event-color-picker {
+  position: relative;
+}
+
+.event-dialog .event-color-current {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* 색 없는 일정은 테마 기본 일정 색 */
+.event-color-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--fc-classic-event, #3788d8);
+}
+
+/* 구글 일정 색 11가지 */
+.event-color-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.event-dialog .event-color-option {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+}
+
+.event-dialog .event-color-option:hover {
+  transform: scale(1.12);
+}
+
+/* 지금 고른 색 */
+.event-dialog .event-color-option[aria-pressed='true'] {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px #374151;
+}

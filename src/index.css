@@ -120,3 +120,13 @@ html.collapsed .calendar-load-error {
   padding-bottom: 2px;
   border-bottom: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 }
+
+/* 일정 막대 배경의 투명도(설정 창의 "일정 투명도", --event-opacity). 막대 색은 FullCalendar가
+   일정 요소의 배경에 --fc-event-color로 칠하므로, 그 색에 투명도를 섞는다. 글씨는 그대로 둔다. */
+.calendar-surface [role='button']:has(> * > .event-label) {
+  background-color: color-mix(
+    in srgb,
+    var(--fc-event-color) calc(var(--event-opacity, 1) * 100%),
+    transparent
+  );
+}

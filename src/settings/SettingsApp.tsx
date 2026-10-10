@@ -17,11 +17,10 @@ import {
   type Appearance,
 } from './appearance.ts'
 
-const COLOR_FIELDS: { key: Exclude<keyof Appearance, 'opacity'>; label: string }[] = [
+const COLOR_FIELDS: { key: Exclude<keyof Appearance, 'opacity' | 'eventOpacity'>; label: string }[] = [
   { key: 'background', label: '배경색' },
   { key: 'text', label: '글씨색' },
   { key: 'today', label: '오늘 칸 색' },
-  { key: 'event', label: '일정 블록 색' },
 ]
 
 export function SettingsApp() {
@@ -39,18 +38,16 @@ export function SettingsApp() {
 
       <section>
         <h2>외관</h2>
-        <label className="settings-row">
-          <span>투명도</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={Math.round((1 - appearance.opacity) * 100)}
-            onChange={(e) => update({ ...appearance, opacity: 1 - Number(e.target.value) / 100 })}
-          />
-          <output>{Math.round((1 - appearance.opacity) * 100)}%</output>
-        </label>
+        <TransparencySlider
+          label="투명도"
+          opacity={appearance.opacity}
+          onChange={(opacity) => update({ ...appearance, opacity })}
+        />
+        <TransparencySlider
+          label="일정 투명도"
+          opacity={appearance.eventOpacity}
+          onChange={(eventOpacity) => update({ ...appearance, eventOpacity })}
+        />
         {COLOR_FIELDS.map(({ key, label }) => (
           <label key={key} className="settings-row">
             <span>{label}</span>
@@ -77,6 +74,33 @@ export function SettingsApp() {
         <GoogleAccount />
       </section>
     </main>
+  )
+}
+
+// 불투명도(0~1)를 투명도(0~100%)로 보여 주고 고른다
+function TransparencySlider({
+  label,
+  opacity,
+  onChange,
+}: {
+  label: string
+  opacity: number
+  onChange: (opacity: number) => void
+}) {
+  const transparency = Math.round((1 - opacity) * 100)
+  return (
+    <label className="settings-row">
+      <span>{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        value={transparency}
+        onChange={(e) => onChange(1 - Number(e.target.value) / 100)}
+      />
+      <output>{transparency}%</output>
+    </label>
   )
 }
 

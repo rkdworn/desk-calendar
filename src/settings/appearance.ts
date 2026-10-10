@@ -3,19 +3,20 @@
 export interface Appearance {
   /** 캘린더 판 배경의 불투명도, 0~1 */
   opacity: number
+  /** 일정 막대 배경의 불투명도, 0~1. 글씨는 그대로 둔다. */
+  eventOpacity: number
   /** '#rrggbb' */
   background: string
   text: string
   today: string
-  event: string
 }
 
 export const DEFAULT_APPEARANCE: Appearance = {
   opacity: 0.72,
+  eventOpacity: 1,
   background: '#ffffff',
   text: '#030712',
   today: '#facc15',
-  event: '#3788d8',
 }
 
 const STORAGE_KEY = 'desk-calendar:appearance'
@@ -40,12 +41,11 @@ export function saveAppearance(appearance: Appearance): void {
 export function applyAppearance(appearance: Appearance): void {
   const style = document.documentElement.style
   style.setProperty('--surface-background', withAlpha(appearance.background, appearance.opacity))
+  style.setProperty('--event-opacity', String(appearance.eventOpacity))
   style.setProperty('--fc-classic-foreground', appearance.text)
   style.setProperty('--fc-classic-muted-foreground', withAlpha(appearance.text, 0.65))
   style.setProperty('--fc-classic-faint-foreground', withAlpha(appearance.text, 0.45))
   style.setProperty('--fc-classic-today', withAlpha(appearance.today, TODAY_ALPHA))
-  style.setProperty('--fc-classic-event', appearance.event)
-  style.setProperty('--fc-classic-event-contrast', readableTextOn(appearance.event))
 }
 
 function withAlpha(hex: string, alpha: number): string {

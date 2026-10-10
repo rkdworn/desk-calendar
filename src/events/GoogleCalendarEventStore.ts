@@ -18,6 +18,7 @@ interface GoogleEvent {
   id: string
   summary?: string
   status?: string
+  colorId?: string
   start: GoogleEventTime
   end: GoogleEventTime
 }
@@ -144,6 +145,7 @@ function fromGoogle(event: GoogleEvent): CalendarEvent {
     allDay,
     start: time(event.start),
     end: time(event.end),
+    ...(event.colorId ? { colorId: event.colorId } : {}),
   }
 }
 
@@ -156,5 +158,11 @@ function toGoogle(event: NewCalendarEvent, patch: boolean) {
     ...(patch ? { date: null, dateTime: null, timeZone: null } : {}),
     ...(event.allDay ? { date: value } : { dateTime: value, timeZone: localTimeZone }),
   })
-  return { summary: event.title, start: time(event.start), end: time(event.end) }
+  return {
+    summary: event.title,
+    start: time(event.start),
+    end: time(event.end),
+    // 색이 없는 일정은 PATCH에서 null로 보내 캘린더 기본색으로 둔다
+    ...(event.colorId ? { colorId: event.colorId } : patch ? { colorId: null } : {}),
+  }
 }
