@@ -18,11 +18,14 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
 ## 명령어
 
 - `npm run dev`: Vite 개발 서버(포트 5173 고정, `strictPort`)
-- `npm run build`: `tsc -b`로 타입 검사 후 프로덕션 빌드(`dist/`)
+- `npm run build`: `tsc -b`로 타입 검사 후 프로덕션 빌드(`dist/`). 그 전에 `prebuild`가 `scripts/clean-dist.mjs`로 `dist`를 지운다. **Node 24의 `fs.rmSync(dir, {recursive: true})`가 경로에 한글이 있으면 프로세스째 죽고(0xC0000409), Vite가 기존 출력 폴더를 비울 때 이 함수를 쓰기 때문이다.** 이 프로젝트 안에서 폴더를 통째로 지우는 Node 코드를 쓰지 않는다.
 - `npm run lint`: oxlint(설정은 `.oxlintrc.json`)
 - `npm run preview`: 빌드 결과 미리보기
 - `npm run tauri dev`: Vite 개발 서버를 띄우고 Tauri 앱을 실행한다(PowerShell에서). 첫 Rust 빌드는 5분 정도 걸린다.
-- `npm run tauri build`: 설치 파일 빌드
+- `npm run tauri build`: 릴리스 빌드와 NSIS 설치 파일(`src-tauri/target/release/bundle/nsis/`). 내 계정에만 설치(`installMode: currentUser`, 관리자 권한 불필요), 설치 화면은 한국어.
+  - 설치된 앱과 개발 모드는 앱 식별자가 같아서 **동시에 켜면 나중 것이 단일 인스턴스 플러그인 때문에 먼저 것에 넘기고 꺼진다.** 하나를 끄고 다른 것을 켠다.
+  - 웹 저장 공간(localStorage: 일정, 색 설정, 접힘 상태)은 출처가 달라 따로다(개발 `http://localhost:5173`, 설치 앱 `http://tauri.localhost`). 창 위치(`layout.json`)는 Rust가 저장해서 공유된다.
+- 앱 아이콘 바꾸기: 원본은 루트의 `app-icon.png`(1024×1024). `npm run tauri icon app-icon.png`로 `src-tauri/icons/`를 다시 만들고, 함께 생기는 `android/`, `ios/` 폴더는 지운다(Windows 전용). **아이콘 파일 이름이 그대로면 cargo가 아이콘을 실행 파일에 다시 넣지 않으므로** `src-tauri/`에서 `cargo clean -p desk-calendar --release`(개발 모드는 `--release` 없이) 후 빌드한다. 설치 후 바로가기·작업 표시줄 아이콘이 옛것이면 `ie4uinit.exe -show`로 아이콘 캐시를 새로 고친다.
 - `cargo test`(`src-tauri/`에서, PowerShell): Rust 단위 테스트. 하나만 돌리려면 `cargo test <테스트 이름 일부>`
 
 ## 개발 환경
@@ -59,7 +62,7 @@ v6와 패키지 구성이 다르다. 웹에서 찾은 v6 예제를 그대로 쓰
 - `settings.html` + `src/settings/`: 트레이 메뉴 "설정"으로 여는 별도 창(Vite 멀티 페이지, `vite.config.ts`의 `build.rolldownOptions.input`). `appearance.ts`가 외관 설정(투명도, 배경·글씨·오늘 칸·일정 블록 색)을 localStorage(`desk-calendar:appearance`)에 저장하고 CSS 변수(`--surface-background`, `--fc-classic-*`)로 적용한다. 두 창은 같은 localStorage를 쓰고, 설정 창이 바꾸면 Tauri 이벤트(`appearance-changed`)로 캘린더 창에 바로 알린다. 자동 실행은 tauri-plugin-autostart이고, 개발 모드(`import.meta.env.DEV`)에서는 스위치를 막는다(개발용 실행 파일이 시작 프로그램에 등록되면 부팅 때 빈 창이 된다). 구글 계정 연결 버튼은 자리만 있다.
 - `src/components/useCollapse.ts`: 숨기기(접기). `<html>`에 `collapsed` 클래스를 붙여 날짜 칸을 숨기고 창 높이를 상단 바에 맞춘다. 접힘 여부와 펼칠 때 높이는 localStorage(`desk-calendar:collapsed`, `desk-calendar:expanded-height`)에 둔다. 창 높이를 바꿀 때는 `resizeHeight`를 쓴다(폭을 CSS→물리 픽셀로 다시 계산하면 반올림 때문에 1px씩 변한다).
 - `src-tauri/`: Tauri 2 데스크톱 쪽(Rust). 크레이트 이름은 `desk-calendar`(라이브러리 `desk_calendar_lib`), 앱 식별자는 `com.rkdworn.deskcalendar`. 창 설정과 빌드 연결(`devUrl`, `frontendDist`)은 `tauri.conf.json`, 웹뷰에 허용할 권한은 `capabilities/`에 있다. Vite의 포트를 바꾸면 `devUrl`도 같이 바꿔야 한다.
-  - `src/lib.rs`: 시작 시 메인 창을 바탕화면에 붙이고(`pin_to_desktop`), 실패하면 일반 창으로 띄운다. 이동·크기 변경 이벤트마다 위치를 저장한다. 트레이 아이콘(`setup_tray`): 왼쪽 클릭은 창 전체 보이기/숨기기, 우클릭 메뉴에 설정과 종료. 설정 창(`open_settings`)은 바탕화면에 붙지 않는 일반 창이고, 이벤트 처리기 안에서 바로 만들면 Windows에서 멈출 수 있어 `async_runtime::spawn`으로 만든다. 창별 권한은 `capabilities/default.json`(main), `capabilities/settings.json`(settings). 창을 보이게 할 때는 반드시 `show_calendar`를 거친다(아래 tao 스타일 문제).
+  - `src/lib.rs`: 시작 시 메인 창을 바탕화면에 붙이고(`pin_to_desktop`), 실패하면 일반 창으로 띄운다. 이동·크기 변경 이벤트마다 위치를 저장한다. 트레이 아이콘(`setup_tray`): 왼쪽 클릭은 캘린더 열기/닫기, 우클릭 메뉴는 "캘린더 열기/닫기 · 설정 · 종료". **캘린더 닫기는 창(웹뷰)을 destroy해 메모리를 돌려주고 프로그램과 트레이 아이콘은 남는다**(카카오톡 방식, `RunEvent::ExitRequested`에서 `code: None`이면 `prevent_exit`). 다시 열면 `tauri.conf.json`의 창 설정으로 새로 만들어 `setup_calendar`로 다시 붙인다(Win32 작업은 `run_on_main_thread`로 UI 스레드에서). 프로그램을 끄는 건 트레이 "종료"(`app.exit`)뿐이다. 단일 인스턴스 플러그인이 두 번째 실행을 `open_calendar`로 넘긴다. 설정 창(`open_settings`)은 바탕화면에 붙지 않는 일반 창이고, 이벤트 처리기 안에서 바로 만들면 Windows에서 멈출 수 있어 `async_runtime::spawn`으로 만든다. 창별 권한은 `capabilities/default.json`(main), `capabilities/settings.json`(settings). 창을 보이게 할 때는 반드시 `show_calendar`를 거친다(아래 tao 스타일 문제).
   - `src/desktop.rs`: Win32로 바탕화면 아이콘 레이어에 붙이기(Windows 전용).
   - `src/layout.rs`: 위치 저장·복원(`%APPDATA%\com.rkdworn.deskcalendar\layout.json`)과 기본 위치 계산. 플랫폼 무관, 단위 테스트 있음.
 
