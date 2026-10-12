@@ -39,7 +39,15 @@ Windows 바탕화면(배경화면 레이어)에 월간 캘린더를 띄우고, �
   - 설치된 앱과 개발 모드는 앱 식별자가 같아서 **동시에 켜면 나중 것이 단일 인스턴스 플러그인 때문에 먼저 것에 넘기고 꺼진다.** 하나를 끄고 다른 것을 켠다.
   - 웹 저장 공간(localStorage: 일정, 색 설정, 접힘 상태)은 출처가 달라 따로다(개발 `http://localhost:5173`, 설치 앱 `http://tauri.localhost`). 창 위치(`layout.json`)는 Rust가 저장해서 공유된다.
 - 앱 아이콘 바꾸기: 원본은 루트의 `app-icon.png`(1024×1024). `npm run tauri icon app-icon.png`로 `src-tauri/icons/`를 다시 만들고, 함께 생기는 `android/`, `ios/` 폴더는 지운다(Windows 전용). **아이콘 파일 이름이 그대로면 cargo가 아이콘을 실행 파일에 다시 넣지 않으므로** `src-tauri/`에서 `cargo clean -p desk-calendar --release`(개발 모드는 `--release` 없이) 후 빌드한다. 설치 후 바로가기·작업 표시줄 아이콘이 옛것이면 `ie4uinit.exe -show`로 아이콘 캐시를 새로 고친다.
-- `cargo test`(`src-tauri/`에서, PowerShell): Rust 단위 테스트. Claude Code의 셸에서는 cargo가 PATH에 없을 수 있다: `$env:PATH = "$env:USERPROFILE\.cargoin;$env:PATH"`. 하나만 돌리려면 `cargo test <테스트 이름 일부>`
+- `cargo test`(`src-tauri/`에서, PowerShell): Rust 단위 테스트. Claude Code의 셸에서는 cargo가 PATH에 없을 수 있다: `$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"`. 하나만 돌리려면 `cargo test <테스트 이름 일부>`
+
+## 릴리스 (GitHub Releases)
+
+- 지금까지: v0.1.0(2026-10-10, 첫 공개), v0.1.1(2026-10-12, 판 뒤로 바탕화면이 비치게 한 수정). 사용자에게 보이는 수정을 `main`에 올렸으면 새 릴리스를 낼지 사용자에게 묻는다.
+- 버전은 `src-tauri/tauri.conf.json`과 `src-tauri/Cargo.toml`의 `version`을 함께 올린다(`package.json`은 0.0.0 그대로). 설치 파일 이름과 설치 앱의 버전 정보가 여기서 나온다. 버그 수정은 패치 버전을 올린다.
+- 순서: 버전 올리기 → `npm run tauri build` → 이 PC의 설치 앱 교체(위 "현재 상태"의 방법) → `Release x.y.z` 커밋(`Cargo.lock` 포함) → 가벼운 태그 `vx.y.z` → `git push origin main vx.y.z` → GitHub 릴리스 만들기와 설치 파일 올리기.
+- 이 PC에는 GitHub CLI(`gh`)가 없어서 REST API를 직접 부른다. 토큰은 `git credential fill`(입력 `protocol=https`, `host=github.com`)로 Git Credential Manager에 저장된 `rkdworn` 토큰을 읽고, 화면에 출력하지 않는다. `POST https://api.github.com/repos/rkdworn/desk-calendar/releases`(`tag_name`, `name`: `Desk Calendar vx.y.z`, `body`) 뒤, 응답의 `upload_url`(`{?name,label}` 앞부분)에 `?name=<파일 이름>`을 붙여 설치 파일을 `Content-Type: application/octet-stream`으로 POST한다. GitHub는 파일 이름의 공백을 `.`으로 바꾼다(`Desk.Calendar_x.y.z_x64-setup.exe`).
+- 릴리스 노트는 개발자가 아닌 사용자가 읽는 한국어로 쓴다: 고친 점, 달라진 점, 업데이트 방법(설치 파일을 그대로 덮어 설치하면 일정·설정·Google 연결이 유지됨, "Windows의 PC 보호" 창에서 추가 정보 → 실행). 처음 설치하는 방법과 기능 목록은 v0.1.0 노트와 README에 있다.
 
 ## 개발 환경
 
@@ -128,7 +136,7 @@ v6와 패키지 구성이 다르다. 웹에서 찾은 v6 예제를 그대로 쓰
 1. **웹앱 MVP**: React + TypeScript + Vite + FullCalendar 월간 뷰. 날짜 클릭 → 일정 추가, 일정 클릭 → 수정/삭제. 저장은 localStorage.
 2. **Tauri 데스크톱 앱**: 창을 바탕화면 아이콘 레이어에 고정(위 "바탕화면 고정" 참고), 트레이 아이콘, 시작 시 자동 실행.
 3. **Google Calendar 연동**: 저장소를 localStorage에서 Google Calendar API로 교체.
-4. **배포**: GitHub Releases에 설치 파일(.exe) 업로드.
+4. **배포**: GitHub Releases에 설치 파일(.exe) 업로드. v0.1.0부터 하고 있다(위 "릴리스").
 
 Tauri가 구글 연동보다 먼저다. OAuth 루프백 흐름은 로컬 포트를 열어야 해서 Tauri 앱에서만 가능하기 때문이다(웹용 OAuth를 임시로 붙이지 않는다).
 
