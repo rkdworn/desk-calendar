@@ -1,6 +1,14 @@
 fn main() {
   google_client();
-  tauri_build::build()
+  // tauri-build 기본 매니페스트(Common Controls v6)에 Windows 10 호환 선언을 더했다. 이 선언이 없으면
+  // Windows가 이 앱을 Windows 8 이전용으로 보고, 바탕화면에 붙인 캘린더 창(자식 창)에
+  // WS_EX_LAYERED를 붙여도 조용히 무시한다(desktop.rs의 attach). 매니페스트가 깨지면 실행 자체가
+  // 안 되므로 파일에는 ASCII만 쓴다.
+  let windows = tauri_build::WindowsAttributes::new().app_manifest(include_str!("windows-app-manifest.xml"));
+  if let Err(error) = tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows)) {
+    println!("{error:#}");
+    std::process::exit(1);
+  }
 }
 
 /// Google Cloud 콘솔에서 받은 OAuth 클라이언트(유형: 데스크톱 앱) JSON을 실행 파일에 넣는다.
